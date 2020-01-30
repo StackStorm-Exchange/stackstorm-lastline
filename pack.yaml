@@ -7,3 +7,6 @@ keywords:
   - security
 author: James Fryman
 email: james@stackstorm.com
+python_versions:
+  - "2"
+  - "3"
