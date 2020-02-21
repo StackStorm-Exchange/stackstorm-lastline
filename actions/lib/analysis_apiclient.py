@@ -61,47 +61,22 @@ use::
     python analysis_apiclient.py --api-url https://analyst.lastline.local/ API_KEY API_TOKEN
 
 """
+from __future__ import print_function
+
 import collections
 import datetime
+import json
 import sys
 import time
+from six import StringIO
 
-try:
-    import json
-    import StringIO
-    import requests
-    if __name__ == "__main__":
-        import optparse
-        import IPython
-except ImportError, e:
-    if __name__ == "__main__":
-        print >> sys.stderr, \
-            "A module required for running the analysis API example \
-            shell was not found:"
-        print >> sys.stderr, "\t'%s'" % str(e)
-        print >> sys.stderr, "Please install the missing module."
-        print >> sys.stderr, "For this, you can use tools such as easy_install or pip:"
-        print >> sys.stderr, "\t easy_install <MODULE_NAME>"
-        print >> sys.stderr, "\t pip install <MODULE_NAME>"
-        sys.exit(1)
-    else:
-        raise
+import requests
 
 try:
     from llapi_client import get_proxies_from_config
 except ImportError:
     # Non-Lastline environment. Reading from config not support/needed.
     get_proxies_from_config = None
-
-try:
-    requests_version = requests.__version__
-    if not requests_version.startswith('2.2'):
-        raise Exception()
-except Exception:
-    requests_version = '?'
-    print >> sys.stderr, "Warning: Your version of requests (%s) might not " \
-                         "be compatible with this module." % requests_version
-    print >> sys.stderr, "Officially supported are versions 2.2.x"
 
 
 # copied these values from Lastline utility code (llapi) to make them available
@@ -412,8 +387,10 @@ class TaskCompletion(object):
             # attributeError needed in case iteritems is missing (not a dict)
             # let's give it the trace of the original exception, so we know
             # what the specific problem is!
+            e = InvalidAnalysisAPIResponse("Unable to parse response to get_completed()")
             trace = sys.exc_info()[2]
-            raise InvalidAnalysisAPIResponse("Unable to parse response to get_completed()"), None, trace
+            e.__traceback__ = trace
+            raise e
 
 
 class AnalysisClientBase(object):
@@ -1196,7 +1173,7 @@ class AnalysisClientBase(object):
             if not result:
                 raise InvalidArtifactError()
 
-        except CommunicationError, exc:
+        except CommunicationError as exc:
             internal_error = str(exc.internal_error())
             if internal_error == '410':
                 raise InvalidArtifactError("The artifact is no longer " \
@@ -1809,7 +1786,7 @@ class AnalysisClient(AnalysisClientBase):
                         proxies=self.__proxies)
             # raise if anything went wrong
             response.raise_for_status()
-        except requests.RequestException, exc:
+        except requests.RequestException as exc:
             if self.__logger:
                 self.__logger.error("Error contacting Malscape API: %s", exc)
             # raise a wrapped exception
@@ -1888,4 +1865,14 @@ Run client for analysis api with the provided credentials
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    try:
+        import IPython
+    except ImportError:
+        print("A module required for running the analysis API example "
+              "shell was not found:", file=sys.stderr)
+        print("\t'%s'".format(str(e)), file=sys.stderr)
+        print("Please install the missing module with pip:", file=sys.stderr)
+        print("\tpip install <MODULE_NAME>", file=sys.stderr)
+        sys.exit(1)
+    else:
+        sys.exit(main(sys.argv))
