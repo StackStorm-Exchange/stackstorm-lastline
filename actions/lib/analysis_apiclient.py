@@ -387,8 +387,10 @@ class TaskCompletion(object):
             # attributeError needed in case iteritems is missing (not a dict)
             # let's give it the trace of the original exception, so we know
             # what the specific problem is!
+            e = InvalidAnalysisAPIResponse("Unable to parse response to get_completed()")
             trace = sys.exc_info()[2]
-            raise InvalidAnalysisAPIResponse("Unable to parse response to get_completed()"), None, trace
+            e.__traceback__ = trace
+            raise e
 
 
 class AnalysisClientBase(object):
