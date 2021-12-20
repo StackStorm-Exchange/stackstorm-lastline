@@ -32,7 +32,3 @@ parameters:
   user_agent:
     type: "string"
     description: "user agent header to use for analysis"
-  verify:
-    type: "boolean"
-    description: "if False, disable SSL-certificate verification"
-    default: true
